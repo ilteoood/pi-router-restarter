@@ -1,5 +1,5 @@
 import { connect } from 'node:tls';
-
+import { parseSetCookie, stringifyCookie } from 'cookie';
 import { aesDecrypt, aesEncrypt, aesKeyString, createAesSession, md5Hex, rsaRawEncrypt, type AesSession, type RsaPublicKey } from './gdpr-crypto.ts';
 import { parseHttpResponse, type HttpResponse } from './http-response.ts';
 
@@ -7,6 +7,7 @@ const DEFAULT_BASE_URL = 'https://192.168.1.1';
 const DEFAULT_STACK = '0,0,0,0,0,0';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const CONNECTED_STATUS = 'Connected';
+const SESSION_COOKIE = 'JSESSIONID';
 
 type Operation = 'gl' | 'op' | 'cgi';
 
@@ -41,7 +42,7 @@ export class TpLinkGdprClient {
   #sequence = 0;
   #signatureHash = '';
   #publicKey: RsaPublicKey = { modulusHex: '', exponentHex: '' };
-  #cookies = new Map<string, string>();
+  #cookieHeader = '';
   #token = '0';
 
   constructor(options: ClientOptions) {
@@ -159,17 +160,10 @@ export class TpLinkGdprClient {
   }
 
   #accept(response: HttpResponse, path: string): string {
-    this.#storeCookies(response.cookies);
+    const session = response.cookies.map(setCookie => parseSetCookie(setCookie)).find(({ name }) => name === SESSION_COOKIE);
+    if (session?.value !== undefined) this.#cookieHeader = stringifyCookie({ [session.name]: session.value });
     if (response.status >= 400) throw new RouterError(`Router rejected "${path}" with status ${response.status}`);
     return response.body;
-  }
-
-  #storeCookies(cookies: string[]): void {
-    for (const cookie of cookies) {
-      const pair = cookie.split(';')[0] ?? '';
-      const separator = pair.indexOf('=');
-      if (separator > 0) this.#cookies.set(pair.slice(0, separator), pair.slice(separator + 1));
-    }
   }
 
   #request(method: 'GET' | 'POST', path: string, body: string): Promise<HttpResponse> {
@@ -181,9 +175,7 @@ export class TpLinkGdprClient {
       'X-Requested-With': 'XMLHttpRequest',
       TokenID: this.#token
     };
-    if (this.#cookies.size > 0) {
-      headers.Cookie = [...this.#cookies].map(([name, value]) => `${name}=${value}`).join('; ');
-    }
+    if (this.#cookieHeader !== '') headers.Cookie = this.#cookieHeader;
     const head = [
       `${method} ${url.pathname}${url.search} HTTP/1.1`,
       `Host: ${url.host}`,
