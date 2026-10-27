@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D24-5FA04E)](package.json)
 
-A [Pi](https://github.com/earendil-works/pi-coding-agent) extension that reconnects the GPON WAN of a TP-Link router so the ISP hands out a fresh public IP address.
+A [Pi](https://github.com/earendil-works/pi) extension that reconnects the GPON WAN of a TP-Link router so the ISP hands out a fresh public IP address.
 
 It registers a single slash command:
 
@@ -43,9 +43,15 @@ This is useful when your ISP assigns a dynamic public address and you need a dif
 | Requirement | Details |
 | --- | --- |
 | **Node.js** | 24 or later (`engines.node: ">=24"`) |
-| **Pi** | The coding agent runtime that loads the extension |
+| **Pi** | The [coding agent runtime](https://github.com/earendil-works/pi) that loads the extension |
 | **Router** | A TP-Link router reachable over the LAN that exposes the `cgi_gdpr` API family (`/cgi/getGDPRParm`, `/cgi_gdpr`) and the `DEV2_ADT_WAN` / `ACT_PPP_CONN` operations |
 | **Connection** | The WAN under test must be a GPON/PON WAN (the code selects the connection whose `accessMode` is `PON`) |
+
+Pi itself is installed separately:
+
+```bash
+curl -fsSL https://pi.dev/install.sh | sh
+```
 
 The extension talks to the router over HTTPS on the LAN. It never reaches the internet to do its job: the only traffic is to the router itself.
 
