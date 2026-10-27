@@ -145,5 +145,8 @@ vite.config.ts.timestamp-*
 # Astro generated types
 .astro/
 
+# Core dumps
+core
+
 # Turbo Repo
 .turbo
