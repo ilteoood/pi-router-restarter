@@ -1,5 +1,5 @@
 {
-  "name": "harness-router-restarter",
+  "name": "pi-router-restarter",
   "version": "0.1.0",
   "private": true,
   "type": "module",
