@@ -3,6 +3,8 @@ import { setTimeout } from 'node:timers/promises';
 import { connect } from 'node:tls';
 import { aesDecrypt, aesEncrypt, aesKeyString, createAesSession, md5Hex, rsaRawEncrypt, type AesSession, type RsaPublicKey } from './gdpr-crypto.ts';
 import { parseHttpResponse, type HttpResponse } from './http-response.ts';
+import { RouterError } from './router-error.ts';
+import { readAssignedString, readScriptResult, toBase64 } from './utils.ts';
 
 const DEFAULT_BASE_URL = 'https://192.168.1.1';
 const DEFAULT_STACK = '0,0,0,0,0,0';
@@ -34,12 +36,10 @@ export interface WanConnection {
   [attribute: string]: string;
 }
 
-export class RouterError extends Error {}
-
 export class TpLinkGdprClient {
   readonly #baseUrl: string;
   readonly #credentials: Credentials;
-  readonly #session: AesSession;
+  readonly #session: AesSession = createAesSession();
   #sequence = 0;
   #signatureHash = '';
   #publicKey: RsaPublicKey = { modulusHex: '', exponentHex: '' };
@@ -49,7 +49,6 @@ export class TpLinkGdprClient {
   constructor(options: ClientOptions) {
     this.#baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '');
     this.#credentials = { username: options.username, password: options.password };
-    this.#session = createAesSession();
   }
 
   async login(): Promise<void> {
@@ -204,22 +203,4 @@ export class TpLinkGdprClient {
       });
     });
   }
-}
-
-function toBase64(value: string): string {
-  return Buffer.from(value, 'utf8').toString('base64');
-}
-
-function readScriptResult(script: string): number {
-  const matches = [...script.matchAll(/\$\.ret\s*=\s*(-?\d+)/g)];
-  const lastMatch = matches.at(-1);
-  if (!lastMatch) throw new RouterError('Router response carried no result code');
-  return Number(lastMatch[1]);
-}
-
-function readAssignedString(source: string, name: string): string {
-  const match = new RegExp(`var\\s+${name}\\s*=\\s*"([^"]*)"`).exec(source);
-  const value = match?.[1];
-  if (value === undefined) throw new RouterError(`Router did not provide "${name}"`);
-  return value;
 }
