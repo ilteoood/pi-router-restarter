@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
+import { constants, createCipheriv, createDecipheriv, createHash, createPublicKey, publicEncrypt, randomBytes } from 'node:crypto';
 
 export interface AesSession {
   key: string;
@@ -38,21 +38,15 @@ export function aesDecrypt(session: AesSession, ciphertextBase64: string): strin
   return Buffer.concat([decipher.update(ciphertextBase64, 'base64'), decipher.final()]).toString('utf8');
 }
 
-function modPow(base: bigint, exponent: bigint, modulus: bigint): bigint {
-  let result = 1n;
-  let factor = base % modulus;
-  let remaining = exponent;
-  while (remaining > 0n) {
-    if (remaining & 1n) result = (result * factor) % modulus;
-    factor = (factor * factor) % modulus;
-    remaining >>= 1n;
-  }
-  return result;
-}
-
 export function rsaRawEncrypt(publicKey: RsaPublicKey, plaintext: string): string {
-  const modulus = BigInt(`0x${publicKey.modulusHex}`);
-  const exponent = BigInt(`0x${publicKey.exponentHex}`);
+  const key = createPublicKey({
+    key: {
+      kty: 'RSA',
+      n: Buffer.from(publicKey.modulusHex, 'hex').toString('base64url'),
+      e: Buffer.from(publicKey.exponentHex, 'hex').toString('base64url')
+    },
+    format: 'jwk'
+  });
   const blockLength = publicKey.modulusHex.length / 2;
   const plaintextBytes = Buffer.from(plaintext, 'utf8');
   const blocks: string[] = [];
@@ -60,8 +54,7 @@ export function rsaRawEncrypt(publicKey: RsaPublicKey, plaintext: string): strin
   for (let offset = 0; offset < plaintextBytes.length; offset += blockLength) {
     const block = Buffer.alloc(blockLength);
     plaintextBytes.copy(block, 0, offset, Math.min(offset + blockLength, plaintextBytes.length));
-    const encrypted = modPow(BigInt(`0x${block.toString('hex')}`), exponent, modulus);
-    blocks.push(encrypted.toString(16).padStart(blockLength * 2, '0'));
+    blocks.push(publicEncrypt({ key, padding: constants.RSA_NO_PADDING }, block).toString('hex'));
   }
 
   return blocks.join('');
