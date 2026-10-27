@@ -10,8 +10,7 @@ export interface RsaPublicKey {
   exponentHex: string;
 }
 
-const AES_KEY_LENGTH = 16;
-const AES_IV_LENGTH = 16;
+const AES_MATERIAL_BYTES = 8;
 
 export function md5Hex(value: string): string {
   return createHash('md5').update(value, 'utf8').digest('hex');
@@ -19,8 +18,8 @@ export function md5Hex(value: string): string {
 
 export function createAesSession(): AesSession {
   return {
-    key: randomBytes(AES_KEY_LENGTH).toString('hex').slice(0, AES_KEY_LENGTH),
-    iv: randomBytes(AES_IV_LENGTH).toString('hex').slice(0, AES_IV_LENGTH)
+    key: randomBytes(AES_MATERIAL_BYTES).toString('hex'),
+    iv: randomBytes(AES_MATERIAL_BYTES).toString('hex')
   };
 }
 
