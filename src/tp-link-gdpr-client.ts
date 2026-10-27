@@ -33,6 +33,7 @@ export interface WanConnection {
   stack: string;
   accessMode: string;
   connStatusV4: string;
+  connIPv4Address: string;
   [attribute: string]: string;
 }
 
