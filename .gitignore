@@ -146,7 +146,7 @@ vite.config.ts.timestamp-*
 .astro/
 
 # Core dumps
-core
+core.*
 
 # Turbo Repo
 .turbo
