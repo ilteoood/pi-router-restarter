@@ -8,7 +8,7 @@ const DEFAULT_STACK = '0,0,0,0,0,0';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const CONNECTED_STATUS = 'Connected';
 
-type Operation = 'go' | 'so' | 'gl' | 'ao' | 'do' | 'op' | 'cgi';
+type Operation = 'gl' | 'op' | 'cgi';
 
 interface Credentials {
   username: string;
@@ -74,18 +74,6 @@ export class TpLinkGdprClient {
     const token = /var token="([^"]+)"/.exec(page)?.[1];
     if (token === undefined) throw new RouterError('Login did not produce an authenticated session');
     this.#token = token;
-  }
-
-  async cgi(oid: string, data: Record<string, string> = {}): Promise<number> {
-    return readScriptResult(await this.#exchange('cgi', oid, data));
-  }
-
-  async get<T>(oid: string, data: Record<string, string> = {}): Promise<T> {
-    return this.#unwrap(await this.#json<T>('go', oid, data));
-  }
-
-  async set(oid: string, data: Record<string, string>): Promise<void> {
-    this.#unwrap(await this.#json('so', oid, data));
   }
 
   async operate(oid: string, data: Record<string, string> = {}): Promise<void> {
