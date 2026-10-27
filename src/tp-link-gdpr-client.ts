@@ -1,5 +1,6 @@
-import { connect } from 'node:tls';
 import { parseSetCookie, stringifyCookie } from 'cookie';
+import { setTimeout } from 'node:timers/promises';
+import { connect } from 'node:tls';
 import { aesDecrypt, aesEncrypt, aesKeyString, createAesSession, md5Hex, rsaRawEncrypt, type AesSession, type RsaPublicKey } from './gdpr-crypto.ts';
 import { parseHttpResponse, type HttpResponse } from './http-response.ts';
 
@@ -118,7 +119,7 @@ export class TpLinkGdprClient {
       if (connection === undefined) throw new RouterError(`Router reported no WAN connection on stack ${stack}`);
       if (reached(connection.connStatusV4)) return connection;
       if (Date.now() > deadline) throw new RouterError(`WAN connection on stack ${stack} stayed ${connection.connStatusV4} for ${timeoutMs} ms`);
-      await new Promise(resolve => setTimeout(resolve, 1_000));
+      await setTimeout(1_000);
     }
   }
 
